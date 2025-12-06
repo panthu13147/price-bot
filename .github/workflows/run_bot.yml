@@ -1,10 +1,10 @@
 name: Price Bot run (every 5 min)
 on:
+  workflow_dispatch:     # Allows manual testing
   schedule:
     - cron: '*/5 * * * *' # Run every 5 minutes UTC
 
     
-  workflow_dispatch:     # Allows manual testing
 
 jobs:
   run-scraper:
