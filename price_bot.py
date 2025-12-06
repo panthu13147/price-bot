@@ -56,11 +56,18 @@ if response.status_code == 200:
     
     extracted_prices = []
     
+    # ... inside the main logic block ...
+    extracted_prices = []
+    
     for p in all_prices:
         # Clean text: remove commas and periods
         text = p.get_text().strip().replace(",", "").replace(".", "")
+        
         if text.isdigit():
-            extracted_prices.append(int(text))
+            price_val = int(text)
+            # NEW FILTER: Only include prices greater than zero (real prices)
+            if price_val > 0: 
+                extracted_prices.append(price_val)
 
     if extracted_prices:
         current_price = min(extracted_prices) # <--- This is the key: finds 109900
