@@ -1,17 +1,18 @@
 import requests
 from bs4 import BeautifulSoup
-import smtplib
-import os
+import smtplib 
+import os 
 
 # --- CLOUD CONFIGURATION ---
-MY_EMAIL = os.environ.get("MY_EMAIL")
+# The bot gets these from the Github Vault (Secrets)
+MY_EMAIL = os.environ.get("MY_EMAIL") 
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
 # 1. The Target
 url = 'https://www.amazon.in/Apple-MacBook-13-inch-10-core-Unified/dp/B0DZDDKTQZ'
 
-# UPDATED HEADERS (Newer "Disguise" to trick Amazon)
+# UPDATED HEADERS (The "Heavy Duty" Disguise)
 headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -41,7 +42,7 @@ def send_alert(price):
 # --- MAIN LOGIC ---
 print("Checking price...")
 response = requests.get(url, headers=headers)
-print(f"Status Code: {response.status_code}") # <--- DEBUG 1
+print(f"Status Code: {response.status_code}") 
 
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -50,43 +51,43 @@ if response.status_code == 200:
     page_title = soup.title.string.strip() if soup.title else "No Title Found"
     print(f"Page Title: {page_title}")
 
-    # --- PRICE FINDER LOGIC (FIXED) ---
-    # Finds all prices and selects the lowest one (the Deal Price)
-    all_prices = soup.find_all(class_="a-price-whole")
+    # Find the main price container first (scoping the search)
+    price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
     
-    extracted_prices = []
-    
-    # ... inside the main logic block ...
-    extracted_prices = []
-    
-    for p in all_prices:
-        # Clean text: remove commas and periods
-        text = p.get_text().strip().replace(",", "").replace(".", "")
+    if price_container:
+        # Search ONLY inside that main container for all prices
+        all_prices = price_container.find_all(class_="a-price-whole")
         
-        if text.isdigit():
-            price_val = int(text)
-            # NEW FILTER: Only include prices greater than zero (real prices)
-            if price_val > 0: 
-                extracted_prices.append(price_val)
-
-    if extracted_prices:
-        current_price = min(extracted_prices) # <--- This is the key: finds 109900
-        print(f"📉 Lowest Price Found: {current_price}")
+        extracted_prices = []
         
-        # --- TRIGGER LOGIC ---
-        target_price = 110000 # Your target price (should trigger the alert now)
+        for p in all_prices:
+            # Clean text: filter out non-digit characters
+            text = p.get_text().strip().replace(",", "").replace(".", "")
+            
+            if text.isdigit():
+                price_val = int(text)
+                # Only include prices greater than a minimum threshold (e.g., 10,000 INR)
+                if price_val > 10000: 
+                    extracted_prices.append(price_val)
         
-        if current_price < target_price:
-            print("Target Met! Triggering Alert...")
-            if MY_EMAIL and MY_PASSWORD:
-                send_alert(current_price)
+        if extracted_prices:
+            current_price = min(extracted_prices) 
+            print(f"📉 Lowest Price Found (Scoped): {current_price}")
+            
+            # --- TRIGGER LOGIC ---
+            target_price = 110000 
+            
+            if current_price < target_price:
+                print("Target Met! Triggering Alert...")
+                if MY_EMAIL and MY_PASSWORD:
+                    send_alert(current_price)
+                else:
+                    print("⚠️ Alert triggered, but no credentials found in secrets.")
             else:
-                print("⚠️ Alert triggered, but no credentials found in secrets.")
-        else:
-            print(f"Price ({current_price}) is still high.")
+                print(f"Price ({current_price}) is still high.")
 
-    else:
-        print("⚠️ Price tag not found! Amazon might have given us a CAPTCHA page.")
+        else:
+            print("⚠️ ERROR: No valid main price found in the Buy Box.")
 
 else:
     print("Failed to connect to Amazon.")
