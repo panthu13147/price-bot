@@ -11,24 +11,38 @@ MY_EMAIL = os.environ.get("MY_EMAIL")
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
-# --- THE SHOPPING MALL (9 Item Dream List) ---
+# --- THE SHOPPING MALL (Option A: Hardcore AI & Gaming) ---
 products = [
-    # --- APPLE ---
-    { "name": "MacBook Air M4 (13-inch)", "url": "https://www.amazon.in/dp/B0DZDDKTQZ", "target_price": 90000 },
-    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 100000 },
-    
-    # --- GAMING (HIGH END) ---
-    { "name": "Lenovo Legion 5 Pro (RTX 4070)", "url": "https://www.amazon.in/dp/B0CX8WZYC3", "target_price": 140000 },
-    { "name": "ASUS ROG Zephyrus G14", "url": "https://www.amazon.in/dp/B09T9CQ5DR", "target_price": 155000 },
-    { "name": "Dell Alienware Area-51", "url": "https://www.amazon.in/dp/B0FHXP6RYD", "target_price": 300000 },
+    # 🥇 PRIMARY TARGET: Acer Predator Helios Neo 16 (i9-14900HX / RTX 4070)
+    # Note: If i9 is out of stock on Amazon, this link tracks the i7-14700HX variant which is also a beast.
+    { 
+        "name": "Acer Predator Helios Neo 16 (i9/i7 RTX 4070)", 
+        "url": "https://www.amazon.in/dp/B0CX8WZYC3", # CHECK LINK: Verify this matches the RTX 4070 model
+        "target_price": 150000 
+    },
 
-    # --- GAMING (MID-RANGE) ---
-    { "name": "HP Omen 16 (Ryzen 9 / RTX 4060)", "url": "https://www.amazon.in/dp/B0FMFPW419", "target_price": 140000 },
-    { "name": "Acer Predator Helios Neo 16 (i7 / RTX 4070)", "url": "https://www.amazon.in/dp/B0FGQK18P2", "target_price": 200000 },
-    { "name": "MSI Katana A17 AI (Ryzen 8000 / RTX 4060)", "url": "https://www.amazon.in/dp/B097PNJL56", "target_price": 110000 },
+    # 🥈 SECONDARY TARGET: Lenovo Legion Pro 5i (i7-14650HX / RTX 4070)
+    # The gold standard for cooling.
+    { 
+        "name": "Lenovo Legion Pro 5i (RTX 4070)", 
+        "url": "https://www.amazon.in/dp/B0D1Y5231P", # CHECK LINK: Search "Lenovo Legion Pro 5i RTX 4070" to confirm
+        "target_price": 150000 
+    },
 
-    # --- WORKSTATION ---
-    { "name": "Dell XPS 15 (i7 / RTX 3050)", "url": "https://www.amazon.in/dp/B09PVDB3BN", "target_price": 150000 }
+    # 🥉 BACKUP OPTION: ASUS ROG Strix G16 (i9 / RTX 4060/4070)
+    # A great alternative if the others are too expensive.
+    { 
+        "name": "ASUS ROG Strix G16", 
+        "url": "https://www.amazon.in/dp/B0C3R3X4G7", 
+        "target_price": 140000 
+    },
+
+    # 🍎 THE REFERENCE (To see how cheap Macs get)
+    { 
+        "name": "MacBook Air M4 (Reference)", 
+        "url": "https://www.amazon.in/dp/B0DZDDKTQZ", 
+        "target_price": 100000 
+    }
 ]
 
 headers = {
@@ -58,7 +72,6 @@ def send_alert(name, price, link):
         print(f"🚫 Error: {e}")
 
 def get_price_amazon(soup):
-    """Specific logic for extracting price from Amazon"""
     price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
     if price_container:
         all_prices = price_container.find_all(class_="a-price-whole")
@@ -86,31 +99,26 @@ def check_price(product):
             soup = BeautifulSoup(response.content, 'html.parser')
             current_price = None
 
-            # --- SITE DETECTION LOGIC ---
             if "amazon" in url:
                 current_price = get_price_amazon(soup)
             else:
                 print(f"⚠️ Unknown website for {name}")
                 return
 
-            # --- RESULT PROCESSING ---
             if current_price:
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print(f"💰 {name}: Rs. {current_price}")
                 
-                # Save to CSV
                 file_path = 'price_history.csv'
                 is_new_file = not os.path.exists(file_path)
                 with open(file_path, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     if is_new_file:
                             writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
-                    
                     site_name = "Amazon" 
                     writer.writerow([current_time, name, current_price, site_name])
                     print(f"✅ Saved data for {name}")
 
-                # Check Target
                 if current_price < target_price:
                     print("🚨 Target Met!")
                     if MY_EMAIL and MY_PASSWORD:
@@ -125,7 +133,6 @@ def check_price(product):
     except Exception as e:
         print(f"🚫 Error checking {name}: {e}")
 
-# --- MAIN LOOP ---
 print("--- Starting Mall Check ---")
 for item in products:
     check_price(item)
