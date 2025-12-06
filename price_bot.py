@@ -1,13 +1,11 @@
-import csv
-
-import datetime
 import requests
 from bs4 import BeautifulSoup
 import smtplib 
 import os 
+import datetime # For timestamp
+import csv      # For file saving
 
 # --- CLOUD CONFIGURATION ---
-# The bot gets these from the Github Vault (Secrets)
 MY_EMAIL = os.environ.get("MY_EMAIL") 
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
@@ -26,12 +24,28 @@ headers = {
     "Referer": "https://www.google.com/"
 }
 
+# --- ALERT FUNCTION (Restored and Complete) ---
 def send_alert(price):
     print(f"📧 Sending email to {DESTINATION_EMAIL}...")
     subject = "PRICE DROP ALERT: MacBook Air M4!"
     body = f"The price dropped to Rs. {price}. Buy it here: {url}"
     msg = f"Subject: {subject}\n\n{body}"
     
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(MY_EMAIL, MY_PASSWORD)
+        server.sendmail(MY_EMAIL, DESTINATION_EMAIL, msg)
+        print("✅ Email Sent Successfully!")
+        server.quit()
+    except Exception as e:
+        print(f"🚫 Error: {e}")
+
+# --- MAIN LOGIC ---
+print("Checking price...")
+response = requests.get(url, headers=headers)
+print(f"Status Code: {response.status_code}") 
+
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
     
@@ -59,13 +73,15 @@ if response.status_code == 200:
             print(f"📉 Lowest Price Found: {current_price}")
             print(f"⏰ Timestamp: {current_time}") 
 
-            # --- DATA SAVING LOGIC (NEW) ---
+            # --- DATA SAVING LOGIC (CLOUD FIX) ---
             file_path = 'price_history.csv'
+            is_new_file = not os.path.exists(file_path) # Check if file exists
             
             with open(file_path, mode='a', newline='') as file:
                 writer = csv.writer(file)
-                # Write a header row if the file is new/empty
-                if os.path.getsize(file_path) == 0:
+                
+                # Write a header row only if the file did not exist before
+                if is_new_file:
                      writer.writerow(['Timestamp', 'Price'])
                 
                 # Write the new data point
@@ -79,14 +95,13 @@ if response.status_code == 200:
                 print("Target Met! Triggering Alert...")
                 if MY_EMAIL and MY_PASSWORD:
                     send_alert(current_price)
+                else:
+                    print("⚠️ Alert triggered, but no credentials found in secrets.")
             else:
                 print(f"Price ({current_price}) is still high.")
 
         else:
             print("⚠️ ERROR: No valid main price found in the Buy Box.")
-
-else:
-    print("Failed to connect to Amazon.")
 
 else:
     print("Failed to connect to Amazon.")
