@@ -74,7 +74,7 @@ if response.status_code == 200:
             # Fallback if list is empty
             current_price = int(price_element.get_text().strip().replace(",", "").replace(".", ""))
         
-        target_price = 120000 
+        target_price = 110000 
         
         if clean_price < target_price:
             print("Target Met! Triggering Alert...")
