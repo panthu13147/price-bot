@@ -122,3 +122,8 @@ def check_price(product):
             
     except Exception as e:
         print(f"🚫 Error checking {product['name']}: {e}")
+        # --- MAIN EXECUTION ---
+print("--- Starting Stable Cloud Check ---")
+for item in products:
+    check_price(item)
+    print("-" * 30)
