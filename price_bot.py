@@ -1,3 +1,5 @@
+import csv
+
 import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -30,21 +32,6 @@ def send_alert(price):
     body = f"The price dropped to Rs. {price}. Buy it here: {url}"
     msg = f"Subject: {subject}\n\n{body}"
     
-    try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(MY_EMAIL, MY_PASSWORD)
-        server.sendmail(MY_EMAIL, DESTINATION_EMAIL, msg)
-        print("✅ Email Sent Successfully!")
-        server.quit()
-    except Exception as e:
-        print(f"🚫 Error: {e}")
-
-# --- MAIN LOGIC ---
-print("Checking price...")
-response = requests.get(url, headers=headers)
-print(f"Status Code: {response.status_code}") 
-
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
     
@@ -56,31 +43,35 @@ if response.status_code == 200:
     price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
     
     if price_container:
-        # Search ONLY inside that main container for all prices
         all_prices = price_container.find_all(class_="a-price-whole")
-        
         extracted_prices = []
         
         for p in all_prices:
-            # Clean text: filter out non-digit characters
             text = p.get_text().strip().replace(",", "").replace(".", "")
-            
             if text.isdigit():
                 price_val = int(text)
-                # Only include prices greater than a minimum threshold (e.g., 10,000 INR)
                 if price_val > 10000: 
                     extracted_prices.append(price_val)
         
         if extracted_prices:
             current_price = min(extracted_prices) 
-            print(f"📉 Lowest Price Found (Scoped): {current_price}")
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"📉 Lowest Price Found: {current_price}")
+            print(f"⏰ Timestamp: {current_time}") 
 
-            # ... after current_price is calculated ...
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"⏰ Timestamp: {current_time}") 
-        
-        # ... now continue with the trigger logic
+            # --- DATA SAVING LOGIC (NEW) ---
+            file_path = 'price_history.csv'
             
+            with open(file_path, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                # Write a header row if the file is new/empty
+                if os.path.getsize(file_path) == 0:
+                     writer.writerow(['Timestamp', 'Price'])
+                
+                # Write the new data point
+                writer.writerow([current_time, current_price])
+                print(f"✅ Data saved to {file_path}")
+
             # --- TRIGGER LOGIC ---
             target_price = 110000 
             
@@ -88,13 +79,14 @@ if response.status_code == 200:
                 print("Target Met! Triggering Alert...")
                 if MY_EMAIL and MY_PASSWORD:
                     send_alert(current_price)
-                else:
-                    print("⚠️ Alert triggered, but no credentials found in secrets.")
             else:
                 print(f"Price ({current_price}) is still high.")
 
         else:
             print("⚠️ ERROR: No valid main price found in the Buy Box.")
+
+else:
+    print("Failed to connect to Amazon.")
 
 else:
     print("Failed to connect to Amazon.")
