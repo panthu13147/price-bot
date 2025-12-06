@@ -13,23 +13,22 @@ DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
 # --- THE SHOPPING MALL (Product List) ---
 # Add as many items as you want here!
+# --- THE SHOPPING MALL (Product List) ---
 products = [
     {
-        "name": "MacBook Air M4",
-        "url":"https://www.amazon.in/dp/B0DZDDK21R",
-        "target_price": 100000
+        "name": "MacBook Air M4 (13-inch)",
+        "url": "https://www.amazon.in/Apple-MacBook-13-inch-10-core-Unified/dp/B0DZDDKTQZ",
+        "target_price": 110000
     },
     {
-        "name": "Lenovo Legion Pro 5i (Core i7 / RTX 4070)", 
-        # SEARCH LINK: https://www.amazon.in/s?k=Lenovo+Legion+Pro+5i
+        "name": "Lenovo Legion 5 (i7-14650HX / RTX 4070)", 
         "url": "https://www.amazon.in/dp/B0CX8WZYC3", 
-        "target_price": 140000 # Good deal price for RTX 4070 models
+        "target_price": 145000 
     },
     {
-        "name": "ASUS ROG Zephyrus G14 (Ryzen 9 / RTX 4060)", 
-        # SEARCH LINK: https://www.amazon.in/s?k=ASUS+ROG+Zephyrus+G14
+        "name": "ASUS ROG Zephyrus (G14/G16)", 
         "url": "https://www.amazon.in/dp/B09T9CQ5DR", 
-        "target_price": 150000 # Rare, but a great target
+        "target_price": 135000 
     }
 ]
 
