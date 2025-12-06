@@ -52,18 +52,27 @@ def send_alert(name, price, link):
         print(f"🚫 Error: {e}")
 
 def get_price_amazon(soup):
-    price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
-    if price_container:
-        all_prices = price_container.find_all(class_="a-price-whole")
-        extracted_prices = []
-        for p in all_prices:
-            text = p.get_text().strip().replace(",", "").replace(".", "")
-            if text.isdigit():
-                price_val = int(text)
-                if price_val > 1000: 
-                    extracted_prices.append(price_val)
-        if extracted_prices:
-            return min(extracted_prices)
+    """
+    Robust logic: Tries multiple CSS selectors to find the price.
+    """
+    # LIST OF PLACES TO LOOK FOR PRICE
+    selectors = [
+        {"id": "corePriceDisplay_desktop_feature_div"}, # Standard Desktop
+        {"id": "corePrice_feature_div"},                # Alternative Desktop
+        {"id": "apex_desktop"},                         # Old Layout
+        {"class_": "a-section a-spacing-none aok-align-center"}, # Generic container
+        {"id": "price"}                                  # Mobile/Lite layout
+    ]
+
+    for sel in selectors:
+        container = soup.find(**sel)
+        if container:
+            # Look for the whole number price class
+            price_element = container.find(class_="a-price-whole")
+            if price_element:
+                text = price_element.get_text().strip().replace(",", "").replace(".", "")
+                if text.isdigit():
+                    return int(text)
     return None
 
 def check_price(product):
@@ -75,6 +84,14 @@ def check_price(product):
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # --- DEBUG: CHECK WHAT PAGE WE ACTUALLY GOT ---
+            page_title = soup.title.string.strip() if soup.title else "No Title"
+            if "Robot Check" in page_title or "Captcha" in page_title:
+                print(f"⚠️ AMAZON BLOCKED US (CAPTCHA PAGE) for {product['name']}")
+                return
+            # -----------------------------------------------
+
             current_price = get_price_amazon(soup) 
 
             if current_price:
@@ -99,14 +116,9 @@ def check_price(product):
                 else:
                     print("Price is still high.")
             else:
-                print(f"⚠️ Could not find price for {product['name']}")
+                print(f"⚠️ Could not find price. Page Title was: '{page_title}'")
         else:
             print(f"❌ Status Code {response.status_code} for {product['name']}")
             
     except Exception as e:
         print(f"🚫 Error checking {product['name']}: {e}")
-
-print("--- Starting Stable Cloud Check ---")
-for item in products:
-    check_price(item)
-    print("-" * 30)
