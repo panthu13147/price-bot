@@ -2,7 +2,7 @@ name: Price Bot 5 min Check
 
 on:
   schedule:
-    - cron: '* * * * *' # Run every 5 minutes UTC
+    - cron: '*/10 * * * *' # Run every 5 minutes UTC
   workflow_dispatch:     # Allows manual testing
 
 jobs:
