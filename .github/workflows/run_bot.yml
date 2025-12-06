@@ -1,8 +1,8 @@
-name: Price Bot Hourly Check
+name: Price Bot 5 min Check
 
 on:
   schedule:
-    - cron: '0 * * * *'  # This means "Run at minute 0 of every hour"
+    cron: '*/5 * * * *'
   workflow_dispatch:      # This lets you run it manually instantly to test it!
 
 jobs:
