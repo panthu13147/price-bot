@@ -29,7 +29,7 @@ jobs:
         run: python price_bot.py
         
       - name: Upload Price History
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: price-history-data
           path: price_history.csv
