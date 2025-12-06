@@ -27,7 +27,7 @@ products = [
     }
 ]
 
-# --- STEALTH HEADERS (Windows 10 + Google Referer) ---
+# --- STEALTH HEADERS ---
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
@@ -54,13 +54,13 @@ def send_alert(name, price, link):
         print(f"🚫 Error: {e}")
 
 def get_price_amazon(soup):
-    # Multi-Selector Strategy
+    # Strategy 1: Specific Container IDs (High Accuracy)
     selectors = [
         {"id": "corePriceDisplay_desktop_feature_div"},
         {"id": "corePrice_feature_div"},
         {"id": "apex_desktop"},
-        {"class_": "a-section a-spacing-none aok-align-center"},
-        {"id": "price"}
+        {"id": "price_inside_buybox"},
+        {"class_": "a-section a-spacing-none aok-align-center"}
     ]
     for sel in selectors:
         container = soup.find(**sel)
@@ -70,13 +70,23 @@ def get_price_amazon(soup):
                 text = price_element.get_text().strip().replace(",", "").replace(".", "")
                 if text.isdigit():
                     return int(text)
+
+    # Strategy 2: "Center Column" Fallback (Broad Search)
+    # If specific IDs fail, look for ANY price in the main product area
+    center_col = soup.find(id="centerCol")
+    if center_col:
+        price_element = center_col.find(class_="a-price-whole")
+        if price_element:
+            text = price_element.get_text().strip().replace(",", "").replace(".", "")
+            if text.isdigit():
+                return int(text)
+                
     return None
 
 def check_price(product):
     url = product["url"]
     print(f"🔎 Checking {product['name']}...")
     
-    # Use a Session to handle Cookies like a real browser
     session = requests.Session()
     
     try:
@@ -85,10 +95,8 @@ def check_price(product):
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
             
-            # Debug: Check Page Title
+            # Anti-Redirect Logic
             page_title = soup.title.string.strip() if soup.title else "No Title"
-            
-            # Logic: If redirected to homepage, try one more time
             if page_title == "Amazon.in":
                 print("   ⚠️ Redirected to Homepage. Retrying...")
                 time.sleep(2)
