@@ -1,3 +1,4 @@
+import datetime
 import requests
 from bs4 import BeautifulSoup
 import smtplib 
@@ -73,6 +74,12 @@ if response.status_code == 200:
         if extracted_prices:
             current_price = min(extracted_prices) 
             print(f"📉 Lowest Price Found (Scoped): {current_price}")
+
+            # ... after current_price is calculated ...
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"⏰ Timestamp: {current_time}") 
+        
+        # ... now continue with the trigger logic
             
             # --- TRIGGER LOGIC ---
             target_price = 110000 
