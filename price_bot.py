@@ -11,25 +11,25 @@ MY_EMAIL = os.environ.get("MY_EMAIL")
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
-# --- THE SHOPPING MALL (Product List) ---
-# Add as many items as you want here!
-# --- THE SHOPPING MALL (Product List) ---
+# --- THE SHOPPING MALL (10 Item Dream List) ---
 products = [
-    {
-        "name": "MacBook Air M4 (13-inch)",
-        "url": "https://www.amazon.in/Apple-MacBook-13-inch-10-core-Unified/dp/B0DZDDKTQZ",
-        "target_price": 110000
-    },
-    {
-        "name": "Lenovo Legion 5 (i7-14650HX / RTX 4070)", 
-        "url": "https://www.amazon.in/dp/B0CX8WZYC3", 
-        "target_price": 145000 
-    },
-    {
-        "name": "ASUS ROG Zephyrus (G14/G16)", 
-        "url": "https://www.amazon.in/dp/B09T9CQ5DR", 
-        "target_price": 135000 
-    }
+    # --- APPLE ---
+    { "name": "MacBook Air M4 (13-inch)", "url": "https://www.amazon.in/dp/B0DZDDKTQZ", "target_price": 110000 },
+    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 155000 },
+    
+    # --- GAMING (HIGH END) ---
+    { "name": "Lenovo Legion 5 Pro (RTX 4070)", "url": "https://www.amazon.in/dp/B0CX8WZYC3", "target_price": 145000 },
+    { "name": "ASUS ROG Zephyrus G14", "url": "https://www.amazon.in/dp/B09T9CQ5DR", "target_price": 135000 },
+    { "name": "HP Omen 16 (RTX 4060)", "url": "https://www.amazon.in/dp/B0C2D1P9F8", "target_price": 105000 },
+    { "name": "Dell Alienware m16", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 180000 },
+
+    # --- GAMING (BUDGET/MID) ---
+    { "name": "Acer Predator Helios Neo 16", "url": "https://www.amazon.in/dp/B0C2D1P9F8", "target_price": 110000 },
+    { "name": "MSI Katana 15", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 95000 },
+
+    # --- CODING WORKHORSES ---
+    { "name": "Dell XPS 15", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 200000 },
+    { "name": "ASUS Vivobook Pro 15 OLED", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 85000 }
 ]
 
 headers = {
@@ -58,64 +58,80 @@ def send_alert(name, price, link):
     except Exception as e:
         print(f"🚫 Error: {e}")
 
+def get_price_amazon(soup):
+    """Specific logic for extracting price from Amazon"""
+    price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
+    if price_container:
+        all_prices = price_container.find_all(class_="a-price-whole")
+        extracted_prices = []
+        for p in all_prices:
+            text = p.get_text().strip().replace(",", "").replace(".", "")
+            if text.isdigit():
+                price_val = int(text)
+                if price_val > 1000: 
+                    extracted_prices.append(price_val)
+        if extracted_prices:
+            return min(extracted_prices)
+    return None
+
+def get_price_flipkart(soup):
+    """Specific logic for extracting price from Flipkart"""
+    # Flipkart usually uses this class for the main price
+    price_element = soup.find(class_="Nx9bqj CxhGGd") 
+    if price_element:
+        text = price_element.get_text().strip().replace(",", "").replace("₹", "")
+        if text.isdigit():
+            return int(text)
+    return None
+
 def check_price(product):
     url = product["url"]
     target_price = product["target_price"]
     name = product["name"]
 
-    if "PASTE" in url:
-        print(f"⚠️ Skipping {name}: No URL provided yet.")
-        return
-
     print(f"🔎 Checking {name}...")
     
     try:
         response = requests.get(url, headers=headers)
-        
         if response.status_code == 200:
             soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Scoped Search
-            price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
-            
-            if price_container:
-                all_prices = price_container.find_all(class_="a-price-whole")
-                extracted_prices = []
-                
-                for p in all_prices:
-                    text = p.get_text().strip().replace(",", "").replace(".", "")
-                    if text.isdigit():
-                        price_val = int(text)
-                        if price_val > 1000: # Filter small junk values
-                            extracted_prices.append(price_val)
-                
-                if extracted_prices:
-                    current_price = min(extracted_prices) 
-                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    print(f"💰 {name}: Rs. {current_price}")
-                    
-                    # Save to CSV
-                    file_path = 'price_history.csv'
-                    is_new_file = not os.path.exists(file_path)
-                    
-                    with open(file_path, mode='a', newline='') as file:
-                        writer = csv.writer(file)
-                        if is_new_file:
-                             writer.writerow(['Timestamp', 'Product', 'Price'])
-                        writer.writerow([current_time, name, current_price])
-                        print(f"✅ Saved data for {name}")
+            current_price = None
 
-                    # Check Target
-                    if current_price < target_price:
-                        print("🚨 Target Met!")
-                        if MY_EMAIL and MY_PASSWORD:
-                            send_alert(name, current_price, url)
-                    else:
-                        print("Price is still high.")
-                else:
-                    print(f"⚠️ Could not find valid price for {name}")
+            # --- SITE DETECTION LOGIC ---
+            if "amazon" in url:
+                current_price = get_price_amazon(soup)
+            elif "flipkart" in url:
+                current_price = get_price_flipkart(soup)
             else:
-                print(f"⚠️ Price container not found for {name}")
+                print(f"⚠️ Unknown website for {name}")
+                return
+
+            # --- RESULT PROCESSING ---
+            if current_price:
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"💰 {name}: Rs. {current_price}")
+                
+                # Save to CSV
+                file_path = 'price_history.csv'
+                is_new_file = not os.path.exists(file_path)
+                with open(file_path, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    if is_new_file:
+                            writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
+                    # Infer website name for the CSV
+                    site_name = "Amazon" if "amazon" in url else "Flipkart"
+                    writer.writerow([current_time, name, current_price, site_name])
+                    print(f"✅ Saved data for {name}")
+
+                # Check Target
+                if current_price < target_price:
+                    print("🚨 Target Met!")
+                    if MY_EMAIL and MY_PASSWORD:
+                        send_alert(name, current_price, url)
+                else:
+                    print("Price is still high.")
+            else:
+                print(f"⚠️ Could not find price on page for {name}")
         else:
             print(f"❌ Status Code {response.status_code} for {name}")
             
@@ -126,4 +142,4 @@ def check_price(product):
 print("--- Starting Mall Check ---")
 for item in products:
     check_price(item)
-    print("-" * 30) # Separator line
+    print("-" * 30)
