@@ -6,7 +6,6 @@ on:
   workflow_dispatch:     # Allows manual testing
 
 jobs:
-# ... the rest of the file continues below this line  run-scraper:
     runs-on: ubuntu-latest
 
     steps:
