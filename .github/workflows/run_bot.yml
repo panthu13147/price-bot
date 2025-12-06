@@ -2,10 +2,11 @@ name: Price Bot 5 min Check
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Run every 5 minutes
-  workflow_dispatch:     # Allows manual testing
+    - cron: '*/5 * * * *' # Runs at minute 0, 5, 10... (every 5 minutes UTC)
+  workflow_dispatch:     # Allows manual testing (the green button)
 
 jobs:
+  run-scraper:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,10 +21,15 @@ jobs:
       - name: Install libraries
         run: pip install -r requirements.txt
 
-      - name: Run Bot
+      - name: Run Bot and Check Price
         env:
           MY_EMAIL: ${{ secrets.MY_EMAIL }}
           MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
           DESTINATION_EMAIL: ${{ secrets.DESTINATION_EMAIL }}
         run: python price_bot.py
         
+      - name: Upload Price History
+        uses: actions/upload-artifact@v3
+        with:
+          name: price-history-data
+          path: price_history.csv
