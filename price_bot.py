@@ -46,48 +46,40 @@ print(f"Status Code: {response.status_code}") # <--- DEBUG 1
 if response.status_code == 200:
     soup = BeautifulSoup(response.content, 'html.parser')
     
-    # DEBUG 2: Print the Page Title (This tells us if it's a Captcha!)
+    # DEBUG: Print the Page Title 
     page_title = soup.title.string.strip() if soup.title else "No Title Found"
     print(f"Page Title: {page_title}")
+
+    # --- PRICE FINDER LOGIC (FIXED) ---
+    # Finds all prices and selects the lowest one (the Deal Price)
+    all_prices = soup.find_all(class_="a-price-whole")
     
-    # If that gives us the high number, let's try to find all prices and pick the lowest one!
+    extracted_prices = []
     
-    if price_element:
+    for p in all_prices:
+        # Clean text: remove commas and periods
+        text = p.get_text().strip().replace(",", "").replace(".", "")
+        if text.isdigit():
+            extracted_prices.append(int(text))
+
+    if extracted_prices:
+        current_price = min(extracted_prices) # <--- This is the key: finds 109900
+        print(f"📉 Lowest Price Found: {current_price}")
         
-        # Get all price tags on the page
+        # --- TRIGGER LOGIC ---
+        target_price = 110000 # Your target price (should trigger the alert now)
         
-        all_prices = soup.find_all(class_="a-price-whole")
-        print(f"💰 Found {len(all_prices)} price tags on page.")
-        
-        # specific logic to find the lowest number (the deal price)
-        extracted_prices = []
-        for p in all_prices:
-            # clean the text
-            text = p.get_text().strip().replace(",", "").replace(".", "")
-            if text.isdigit():
-                extracted_prices.append(int(text))
-        
-        if extracted_prices:
-            current_price = min(extracted_prices) # <--- Pick the lowest price found
-            print(f"📉 Lowest Price Found: {current_price}")
-        else:
-            # Fallback if list is empty
-            current_price = int(price_element.get_text().strip().replace(",", "").replace(".", ""))
-        
-        target_price = 110000 
-        
-        if clean_price < target_price:
+        if current_price < target_price:
             print("Target Met! Triggering Alert...")
             if MY_EMAIL and MY_PASSWORD:
-                send_alert(clean_price)
+                send_alert(current_price)
             else:
                 print("⚠️ Alert triggered, but no credentials found in secrets.")
         else:
-            print("Price is still high.")
+            print(f"Price ({current_price}) is still high.")
+
     else:
-        # <--- THIS IS THE MISSING PIECE
         print("⚠️ Price tag not found! Amazon might have given us a CAPTCHA page.")
-        # Optional: Print a bit of the HTML to see what's wrong
-        print("First 500 chars of page:", soup.prettify()[:500])
+
 else:
     print("Failed to connect to Amazon.")
