@@ -14,21 +14,21 @@ DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 # --- THE SHOPPING MALL (9 Item Dream List) ---
 products = [
     # --- APPLE ---
-    { "name": "MacBook Air M4 (13-inch)", "url": "https://www.amazon.in/dp/B0DZDDKTQZ", "target_price": 110000 },
-    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 120000 },
+    { "name": "MacBook Air M4 (13-inch)", "url": "https://www.amazon.in/dp/B0DZDDKTQZ", "target_price": 100000 },
+    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 100000 },
     
     # --- GAMING (HIGH END) ---
-    { "name": "Lenovo Legion 5 Pro (RTX 4070)", "url": "https://www.amazon.in/dp/B0CX8WZYC3", "target_price": 145000 },
-    { "name": "ASUS ROG Zephyrus G14", "url": "https://www.amazon.in/dp/B09T9CQ5DR", "target_price": 135000 },
-    { "name": "Dell Alienware Area-51", "url": "https://www.amazon.in/dp/B0FHXP6RYD", "target_price": 250000 },
+    { "name": "Lenovo Legion 5 Pro (RTX 4070)", "url": "https://www.amazon.in/dp/B0CX8WZYC3", "target_price": 100000 },
+    { "name": "ASUS ROG Zephyrus G14", "url": "https://www.amazon.in/dp/B09T9CQ5DR", "target_price": 100000 },
+    { "name": "Dell Alienware Area-51", "url": "https://www.amazon.in/dp/B0FHXP6RYD", "target_price": 300000 },
 
     # --- GAMING (MID-RANGE) ---
-    { "name": "HP Omen 16 (Ryzen 9 / RTX 4060)", "url": "https://www.amazon.in/dp/B0FMFPW419", "target_price": 115000 },
-    { "name": "Acer Predator Helios Neo 16 (i7 / RTX 4070)", "url": "https://www.amazon.in/dp/B0FGQK18P2", "target_price": 140000 },
-    { "name": "MSI Katana A17 AI (Ryzen 8000 / RTX 4060)", "url": "https://www.amazon.in/dp/B097PNJL56", "target_price": 110000 },
+    { "name": "HP Omen 16 (Ryzen 9 / RTX 4060)", "url": "https://www.amazon.in/dp/B0FMFPW419", "target_price": 100000 },
+    { "name": "Acer Predator Helios Neo 16 (i7 / RTX 4070)", "url": "https://www.amazon.in/dp/B0FGQK18P2", "target_price": 100000 },
+    { "name": "MSI Katana A17 AI (Ryzen 8000 / RTX 4060)", "url": "https://www.amazon.in/dp/B097PNJL56", "target_price": 100000 },
 
     # --- WORKSTATION ---
-    { "name": "Dell XPS 15 (i7 / RTX 3050)", "url": "https://www.amazon.in/dp/B09PVDB3BN", "target_price": 180000 }
+    { "name": "Dell XPS 15 (i7 / RTX 3050)", "url": "https://www.amazon.in/dp/B09PVDB3BN", "target_price": 150000 }
 ]
 
 headers = {
