@@ -56,7 +56,7 @@ if response.status_code == 200:
         clean_price = int(price_element.get_text().strip().replace(",", "").replace(".", ""))
         print(f"Current Price: {clean_price}")
         
-        target_price = 115000 
+        target_price = 120000 
         
         if clean_price < target_price:
             print("Target Met! Triggering Alert...")
