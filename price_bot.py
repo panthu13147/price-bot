@@ -11,25 +11,24 @@ MY_EMAIL = os.environ.get("MY_EMAIL")
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
-# --- THE SHOPPING MALL (10 Item Dream List) ---
+# --- THE SHOPPING MALL (9 Item Dream List) ---
 products = [
     # --- APPLE ---
     { "name": "MacBook Air M4 (13-inch)", "url": "https://www.amazon.in/dp/B0DZDDKTQZ", "target_price": 110000 },
-    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 155000 },
+    { "name": "MacBook Pro M4 (14-inch)", "url": "https://www.amazon.in/dp/B0DZDDK21R", "target_price": 120000 },
     
     # --- GAMING (HIGH END) ---
     { "name": "Lenovo Legion 5 Pro (RTX 4070)", "url": "https://www.amazon.in/dp/B0CX8WZYC3", "target_price": 145000 },
     { "name": "ASUS ROG Zephyrus G14", "url": "https://www.amazon.in/dp/B09T9CQ5DR", "target_price": 135000 },
-    { "name": "HP Omen 16 (RTX 4060)", "url": "https://www.amazon.in/dp/B0C2D1P9F8", "target_price": 105000 },
-    { "name": "Dell Alienware m16", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 180000 },
+    { "name": "Dell Alienware Area-51", "url": "https://www.amazon.in/dp/B0FHXP6RYD", "target_price": 250000 },
 
-    # --- GAMING (BUDGET/MID) ---
-    { "name": "Acer Predator Helios Neo 16", "url": "https://www.amazon.in/dp/B0C2D1P9F8", "target_price": 110000 },
-    { "name": "MSI Katana 15", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 95000 },
+    # --- GAMING (MID-RANGE) ---
+    { "name": "HP Omen 16 (Ryzen 9 / RTX 4060)", "url": "https://www.amazon.in/dp/B0FMFPW419", "target_price": 115000 },
+    { "name": "Acer Predator Helios Neo 16 (i7 / RTX 4070)", "url": "https://www.amazon.in/dp/B0FGQK18P2", "target_price": 140000 },
+    { "name": "MSI Katana A17 AI (Ryzen 8000 / RTX 4060)", "url": "https://www.amazon.in/dp/B097PNJL56", "target_price": 110000 },
 
-    # --- CODING WORKHORSES ---
-    { "name": "Dell XPS 15", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 200000 },
-    { "name": "ASUS Vivobook Pro 15 OLED", "url": "https://www.amazon.in/dp/B0C3R3X4G7", "target_price": 85000 }
+    # --- WORKSTATION ---
+    { "name": "Dell XPS 15 (i7 / RTX 3050)", "url": "https://www.amazon.in/dp/B09PVDB3BN", "target_price": 180000 }
 ]
 
 headers = {
@@ -74,16 +73,6 @@ def get_price_amazon(soup):
             return min(extracted_prices)
     return None
 
-def get_price_flipkart(soup):
-    """Specific logic for extracting price from Flipkart"""
-    # Flipkart usually uses this class for the main price
-    price_element = soup.find(class_="Nx9bqj CxhGGd") 
-    if price_element:
-        text = price_element.get_text().strip().replace(",", "").replace("₹", "")
-        if text.isdigit():
-            return int(text)
-    return None
-
 def check_price(product):
     url = product["url"]
     target_price = product["target_price"]
@@ -100,8 +89,6 @@ def check_price(product):
             # --- SITE DETECTION LOGIC ---
             if "amazon" in url:
                 current_price = get_price_amazon(soup)
-            elif "flipkart" in url:
-                current_price = get_price_flipkart(soup)
             else:
                 print(f"⚠️ Unknown website for {name}")
                 return
@@ -118,8 +105,8 @@ def check_price(product):
                     writer = csv.writer(file)
                     if is_new_file:
                             writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
-                    # Infer website name for the CSV
-                    site_name = "Amazon" if "amazon" in url else "Flipkart"
+                    
+                    site_name = "Amazon" 
                     writer.writerow([current_time, name, current_price, site_name])
                     print(f"✅ Saved data for {name}")
 
