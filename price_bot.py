@@ -2,18 +2,37 @@ import requests
 from bs4 import BeautifulSoup
 import smtplib 
 import os 
-import datetime # For timestamp
-import csv      # For file saving
+import datetime 
+import csv      
+import time
 
 # --- CLOUD CONFIGURATION ---
 MY_EMAIL = os.environ.get("MY_EMAIL") 
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
-# 1. The Target
-url = 'https://www.amazon.in/Apple-MacBook-13-inch-10-core-Unified/dp/B0DZDDKTQZ'
+# --- THE SHOPPING MALL (Product List) ---
+# Add as many items as you want here!
+products = [
+    {
+        "name": "MacBook Air M4",
+        "url":"https://www.amazon.in/dp/B0DZDDK21R",
+        "target_price": 100000
+    },
+    {
+        "name": "Lenovo Legion Pro 5i (Core i7 / RTX 4070)", 
+        # SEARCH LINK: https://www.amazon.in/s?k=Lenovo+Legion+Pro+5i
+        "url": "https://www.amazon.in/dp/B0CX8WZYC3", 
+        "target_price": 140000 # Good deal price for RTX 4070 models
+    },
+    {
+        "name": "ASUS ROG Zephyrus G14 (Ryzen 9 / RTX 4060)", 
+        # SEARCH LINK: https://www.amazon.in/s?k=ASUS+ROG+Zephyrus+G14
+        "url": "https://www.amazon.in/dp/B09T9CQ5DR", 
+        "target_price": 150000 # Rare, but a great target
+    }
+]
 
-# UPDATED HEADERS (The "Heavy Duty" Disguise)
 headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -24,11 +43,10 @@ headers = {
     "Referer": "https://www.google.com/"
 }
 
-# --- ALERT FUNCTION (Restored and Complete) ---
-def send_alert(price):
-    print(f"📧 Sending email to {DESTINATION_EMAIL}...")
-    subject = "PRICE DROP ALERT: MacBook Air M4!"
-    body = f"The price dropped to Rs. {price}. Buy it here: {url}"
+def send_alert(name, price, link):
+    print(f"📧 Sending email for {name}...")
+    subject = f"PRICE DROP: {name} is Rs. {price}!"
+    body = f"The price of {name} dropped to Rs. {price}.\nBuy it here: {link}"
     msg = f"Subject: {subject}\n\n{body}"
     
     try:
@@ -41,67 +59,72 @@ def send_alert(price):
     except Exception as e:
         print(f"🚫 Error: {e}")
 
-# --- MAIN LOGIC ---
-print("Checking price...")
-response = requests.get(url, headers=headers)
-print(f"Status Code: {response.status_code}") 
+def check_price(product):
+    url = product["url"]
+    target_price = product["target_price"]
+    name = product["name"]
 
-if response.status_code == 200:
-    soup = BeautifulSoup(response.content, 'html.parser')
+    if "PASTE" in url:
+        print(f"⚠️ Skipping {name}: No URL provided yet.")
+        return
+
+    print(f"🔎 Checking {name}...")
     
-    # DEBUG: Print the Page Title 
-    page_title = soup.title.string.strip() if soup.title else "No Title Found"
-    print(f"Page Title: {page_title}")
-
-    # Find the main price container first (scoping the search)
-    price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
-    
-    if price_container:
-        all_prices = price_container.find_all(class_="a-price-whole")
-        extracted_prices = []
+    try:
+        response = requests.get(url, headers=headers)
         
-        for p in all_prices:
-            text = p.get_text().strip().replace(",", "").replace(".", "")
-            if text.isdigit():
-                price_val = int(text)
-                if price_val > 10000: 
-                    extracted_prices.append(price_val)
-        
-        if extracted_prices:
-            current_price = min(extracted_prices) 
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"📉 Lowest Price Found: {current_price}")
-            print(f"⏰ Timestamp: {current_time}") 
-
-            # --- DATA SAVING LOGIC (CLOUD FIX) ---
-            file_path = 'price_history.csv'
-            is_new_file = not os.path.exists(file_path) # Check if file exists
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
             
-            with open(file_path, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                
-                # Write a header row only if the file did not exist before
-                if is_new_file:
-                     writer.writerow(['Timestamp', 'Price'])
-                
-                # Write the new data point
-                writer.writerow([current_time, current_price])
-                print(f"✅ Data saved to {file_path}")
-
-            # --- TRIGGER LOGIC ---
-            target_price = 110000 
+            # Scoped Search
+            price_container = soup.find(id="corePriceDisplay_desktop_feature_div")
             
-            if current_price < target_price:
-                print("Target Met! Triggering Alert...")
-                if MY_EMAIL and MY_PASSWORD:
-                    send_alert(current_price)
+            if price_container:
+                all_prices = price_container.find_all(class_="a-price-whole")
+                extracted_prices = []
+                
+                for p in all_prices:
+                    text = p.get_text().strip().replace(",", "").replace(".", "")
+                    if text.isdigit():
+                        price_val = int(text)
+                        if price_val > 1000: # Filter small junk values
+                            extracted_prices.append(price_val)
+                
+                if extracted_prices:
+                    current_price = min(extracted_prices) 
+                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    print(f"💰 {name}: Rs. {current_price}")
+                    
+                    # Save to CSV
+                    file_path = 'price_history.csv'
+                    is_new_file = not os.path.exists(file_path)
+                    
+                    with open(file_path, mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        if is_new_file:
+                             writer.writerow(['Timestamp', 'Product', 'Price'])
+                        writer.writerow([current_time, name, current_price])
+                        print(f"✅ Saved data for {name}")
+
+                    # Check Target
+                    if current_price < target_price:
+                        print("🚨 Target Met!")
+                        if MY_EMAIL and MY_PASSWORD:
+                            send_alert(name, current_price, url)
+                    else:
+                        print("Price is still high.")
                 else:
-                    print("⚠️ Alert triggered, but no credentials found in secrets.")
+                    print(f"⚠️ Could not find valid price for {name}")
             else:
-                print(f"Price ({current_price}) is still high.")
-
+                print(f"⚠️ Price container not found for {name}")
         else:
-            print("⚠️ ERROR: No valid main price found in the Buy Box.")
+            print(f"❌ Status Code {response.status_code} for {name}")
+            
+    except Exception as e:
+        print(f"🚫 Error checking {name}: {e}")
 
-else:
-    print("Failed to connect to Amazon.")
+# --- MAIN LOOP ---
+print("--- Starting Mall Check ---")
+for item in products:
+    check_price(item)
+    print("-" * 30) # Separator line
