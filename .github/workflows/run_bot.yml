@@ -1,0 +1,30 @@
+name: Price Bot Hourly Check
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # This means "Run at minute 0 of every hour"
+  workflow_dispatch:      # This lets you run it manually instantly to test it!
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install libraries
+        run: pip install -r requirements.txt
+
+      - name: Run Bot
+        env:
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+          MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
+          DESTINATION_EMAIL: ${{ secrets.DESTINATION_EMAIL }}
+        run: python price_bot.py
+        
