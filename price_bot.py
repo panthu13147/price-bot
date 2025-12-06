@@ -4,14 +4,13 @@ import smtplib
 import os 
 import datetime 
 import csv      
-import time
 
 # --- CLOUD CONFIGURATION ---
 MY_EMAIL = os.environ.get("MY_EMAIL") 
 MY_PASSWORD = os.environ.get("MY_PASSWORD")
 DESTINATION_EMAIL = os.environ.get("DESTINATION_EMAIL")
 
-# --- THE COMPARISON ENGINE (Amazon vs. Flipkart) ---
+# --- THE TRACKING LIST (Top 2 Contenders) ---
 products = [
     # 🥇 TARGET 1: Acer Predator Helios Neo 16 (i9 / RTX 4070)
     { 
@@ -19,21 +18,12 @@ products = [
         "url": "https://www.amazon.in/dp/B0CX8WZYC3", 
         "target_price": 155000 
     },
-    { 
-        "name": "Acer Predator Helios Neo 16 (Flipkart)", 
-        "url": "https://www.flipkart.com/acer-predator-helios-neo-16-i9-14900hx-rtx-4070/p/itm6246505d578b7?pid=COMGYSFGH8NBUWFH", 
-        "target_price": 155000 
-    },
 
-    # 🥈 TARGET 2: Lenovo Legion Pro 5i (Core Ultra 7 / RTX 4060/5060)
+    # 🥈 TARGET 2: Lenovo Legion Pro 5i (i7-14650HX / RTX 4070)
+    # ✅ UPDATED WITH YOUR NEW LINK
     { 
         "name": "Lenovo Legion Pro 5i (Amazon)", 
-        "url": "https://www.amazon.in/dp/B0D1Y5231P", 
-        "target_price": 165000 
-    },
-    { 
-        "name": "Lenovo Legion Pro 5i (Flipkart)", 
-        "url": "https://www.flipkart.com/lenovo-legion-pro-5/p/itmf1e17d322f275?pid=COMHHE2YNNDUXJAJ", 
+        "url": "https://www.amazon.in/dp/B0CX8CYXZ2", 
         "target_price": 165000 
     }
 ]
@@ -41,10 +31,8 @@ products = [
 headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
     "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Referer": "https://www.google.com/"
+    "Upgrade-Insecure-Requests": "1"
 }
 
 def send_alert(name, price, link):
@@ -78,70 +66,47 @@ def get_price_amazon(soup):
             return min(extracted_prices)
     return None
 
-def get_price_flipkart(soup):
-    # Flipkart's class for the main price
-    price_element = soup.find(class_="Nx9bqj CxhGGd")
-    if price_element:
-        text = price_element.get_text().strip().replace("₹", "").replace(",", "")
-        if text.isdigit():
-            return int(text)
-    return None
-
 def check_price(product):
     url = product["url"]
-    target_price = product["target_price"]
-    name = product["name"]
-
-    print(f"🔎 Checking {name}...")
+    print(f"🔎 Checking {product['name']}...")
     
     try:
         response = requests.get(url, headers=headers)
         
-        # Block check
-        if response.status_code != 200:
-             print(f"❌ Status Code {response.status_code} for {name}")
-             return
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            current_price = get_price_amazon(soup) 
 
-        soup = BeautifulSoup(response.content, 'html.parser')
-        current_price = None
-
-        if "amazon" in url:
-            current_price = get_price_amazon(soup)
-        elif "flipkart" in url:
-            current_price = get_price_flipkart(soup)
-        else:
-            print(f"⚠️ Unknown website for {name}")
-            return
-
-        if current_price:
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"💰 {name}: Rs. {current_price}")
-            
-            file_path = 'price_history.csv'
-            is_new_file = not os.path.exists(file_path)
-            
-            with open(file_path, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                if is_new_file:
-                        writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
+            if current_price:
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"💰 {product['name']}: Rs. {current_price}")
                 
-                site_name = "Amazon" if "amazon" in url else "Flipkart"
-                writer.writerow([current_time, name, current_price, site_name])
-                print(f"✅ Saved data for {name}")
+                # Save to CSV
+                file_path = 'price_history.csv'
+                is_new_file = not os.path.exists(file_path)
+                with open(file_path, mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    if is_new_file:
+                            writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
+                    writer.writerow([current_time, product['name'], current_price, "Amazon"])
+                    print(f"✅ Saved data for {product['name']}")
 
-            if current_price < target_price:
-                print("🚨 Target Met!")
-                if MY_EMAIL and MY_PASSWORD:
-                    send_alert(name, current_price, url)
+                # Alert Logic
+                if current_price < product['target_price']:
+                    print("🚨 Target Met!")
+                    if MY_EMAIL and MY_PASSWORD:
+                        send_alert(product['name'], current_price, url)
+                else:
+                    print("Price is still high.")
             else:
-                print("Price is still high.")
+                print(f"⚠️ Could not find price for {product['name']}")
         else:
-            print(f"⚠️ Could not find price on page for {name}")
+            print(f"❌ Status Code {response.status_code} for {product['name']}")
             
     except Exception as e:
-        print(f"🚫 Error checking {name}: {e}")
+        print(f"🚫 Error checking {product['name']}: {e}")
 
-print("--- Starting Multi-Site Check ---")
+print("--- Starting Stable Cloud Check ---")
 for item in products:
     check_price(item)
     print("-" * 30)
