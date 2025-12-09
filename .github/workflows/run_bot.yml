@@ -1,17 +1,20 @@
-name: Price Bot run (every 5 min)
+name: Price Bot Run
+
 on:
   schedule:
-    - cron: '*/5 * * * *' # Run every 5 minutes UTC
-
-    
-  workflow_dispatch:     # Allows manual testing
+    - cron: '*/5 * * * *'  # Runs every 5 minutes (Adjust as needed)
+  workflow_dispatch:      # Allows you to click "Run Now" manually
 
 jobs:
-  run-scraper:
+  build:
     runs-on: ubuntu-latest
+    
+    # 🔴 IMPORTANT: This gives the bot permission to write to your repo
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -19,18 +22,23 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install libraries
-        run: pip install -r requirements.txt
+      - name: Install Libraries
+        run: |
+          pip install requests beautifulsoup4 pandas
 
-      - name: Run Bot and Check Price
+      - name: Run Price Bot Script
         env:
           MY_EMAIL: ${{ secrets.MY_EMAIL }}
           MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
           DESTINATION_EMAIL: ${{ secrets.DESTINATION_EMAIL }}
-        run: python price_bot.py
-        
-      - name: Upload Price History
-        uses: actions/upload-artifact@v4
-        with:
-          name: price-history-data
-          path: price_history.csv
+        run: python "Price Arbitrage Bot.py"
+        # ⚠️ Make sure the filename above matches your actual Python filename exactly!
+
+      - name: Commit and Push Data
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add price_history.csv
+          # The command below commits changes ONLY if the file changed
+          git commit -m "📈 Update price history [skip ci]" || exit 0
+          git push
