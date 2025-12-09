@@ -31,7 +31,7 @@ jobs:
           MY_EMAIL: ${{ secrets.MY_EMAIL }}
           MY_PASSWORD: ${{ secrets.MY_PASSWORD }}
           DESTINATION_EMAIL: ${{ secrets.DESTINATION_EMAIL }}
-        run: python "Price Arbitrage Bot.py"
+        run: python bot.py
         # ⚠️ Make sure the filename above matches your actual Python filename exactly!
 
       - name: Commit and Push Data
