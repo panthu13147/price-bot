@@ -116,8 +116,8 @@ def check_price(product):
                 with open(file_path, mode='a', newline='') as file:
                     writer = csv.writer(file)
                     if is_new_file:
-                            writer.writerow(['Timestamp', 'Product', 'Price', 'Website'])
-                    writer.writerow([current_time, product['name'], current_price, "Amazon"])
+                            writer.writerow(['Timestamp', 'Product', 'Price', 'Website', 'URL'])
+                    writer.writerow([current_time, product['name'], current_price, "Amazon", url])
                     print(f"✅ Saved data for {product['name']}")
 
                 # Alert Logic
